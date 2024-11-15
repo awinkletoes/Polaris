@@ -48,6 +48,9 @@ SX1278 radio = new Module(RADIO_CS_PIN, RADIO_DIO0_PIN, RADIO_RST_PIN, RADIO_DIO
 #ifndef CONFIG_RADIO_BW
 #define CONFIG_RADIO_BW             125.0
 #endif
+#ifndef CONFIG_RADIO_SF
+#define CONFIG_RADIO_SF             12
+#endif
 
 SX1262 radio = new Module(RADIO_CS_PIN, RADIO_DIO1_PIN, RADIO_RST_PIN, RADIO_BUSY_PIN);
 
@@ -196,7 +199,7 @@ void setup()
     * SX1280        :  Allowed values range from 5 to 12.
     * LR1121        :  Allowed values range from 5 to 12.
     * * * */
-    if (radio.setSpreadingFactor(12) == RADIOLIB_ERR_INVALID_SPREADING_FACTOR) {
+    if (radio.setSpreadingFactor(CONFIG_RADIO_SF) == RADIOLIB_ERR_INVALID_SPREADING_FACTOR) {
         Serial.println(F("Selected spreading factor is invalid for this module!"));
         while (true);
     }
