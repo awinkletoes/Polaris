@@ -11,7 +11,7 @@ HardwareSerial SerialUART(1);
 
 void setup() {
     //Serial.begin(921600);
-    SerialUART.begin(115200, SERIAL_8N1, 17, 18); // tx = 17, rx = 18
+    SerialUART.begin(115200, SERIAL_8N1, 01, 03); // tx = 01, rx = 03
     delay(2000);
 #ifndef LOG_LEVEL
     LOG_LEVEL LOG_LEVEL_NOTICE
