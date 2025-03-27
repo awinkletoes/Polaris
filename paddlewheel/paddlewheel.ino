@@ -2,6 +2,10 @@
 
 //example code below should be plug and play with my esp32 setup, taken from https://www.roboticboat.uk/Microcontrollers/Uno/GarminPaddleWheel/GarminPaddleWheel.html courtesy of Dr. Bowman
 
+//notes:
+//brown is data, red is power, green is ground
+//see phone pictures for where the wires go
+
 // Timer
 unsigned long startTime;
 unsigned long endTime;
@@ -49,9 +53,6 @@ void loop() {
       endTime = millis();
       diff = endTime - startTime;
 
-      Serial.print(diff);
-      Serial.print("ms,\t");
-
       // The wheel has moved 2 cm between the change 0 and 1.
       // Numbers are approximate
       // circumference of wheel = 2 * 3.142 * 1.85 [cm] (2.pi.r) ~ 11.6 cm
@@ -59,16 +60,22 @@ void loop() {
       water_speed = (float)11600 / diff; //original guy's math was weird, the circumference of the whole circle is 11.6 cm, THEN you make it 11,600 because milliseconds so it works out to cm/s
       water_speed = water_speed / 51.444; //convert to knots from cm/s
       //water_speed = water_speed / 100; //testing, converts to m/s from cm/s
+      
+      if (water_speed < 5 && water_speed > 0.1){
       Serial.print(water_speed);
       //Serial.println(" m/s"); //for testing
       Serial.println(" knots");
+      Serial.print(diff);
+      Serial.print("ms,\t");
+      }
       
       paddleReadFlag = 1;//sets the read flag to 1 to exit loop, as we have our measurements
     }
 
-if (water_speed < 3){
-disp("not valid")
-}
+//if (water_speed < 3){
+//disp("not valid");
+//Serial.println("not valid");
+//}
 
 
     paddleCheckFail = millis(); //for failure detection, like if the paddlewheel is tangled in seaweed or zebra mussels
@@ -78,5 +85,5 @@ disp("not valid")
       //Serial.println("exiting, buoy stuck"); //debug for checking if stuck
     }   
   } //end paddle while
-  delay(1000); //debug for simulating delays in buoy loop
+  //delay(1000); //debug for simulating delays in buoy loop
 }
