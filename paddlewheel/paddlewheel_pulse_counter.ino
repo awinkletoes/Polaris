@@ -8,7 +8,7 @@ pcnt_unit_t pcnt_unit = PCNT_UNIT_0;  // Choose the counter unit (PCNT0, PCNT1, 
 pcnt_channel_t pcnt_channel = PCNT_CHANNEL_0;  // Choose the channel (PCNT_CHANNEL_0 or PCNT_CHANNEL_1)
 
 unsigned long lastMillis = 0;  // Variable to store the last time we reset the counter
-const unsigned long interval = 60000;  // 60 seconds in milliseconds
+const unsigned long interval = 10000;  // 10 seconds in milliseconds
 float water_speed; //define water speed as float variable
 
 void setup() {
@@ -46,7 +46,7 @@ void loop() {
   //one rotation of the wheel is 6 pulses (it counts one paddle as either a falling or rising edge, so one rotation has 6 - verified)
   //circumference of the wheel = 11.624cm
   water_speed = (pulseCount/6)*11.624; //convert rotations into distance traveled (cm)
-  water_speed = water_speed/60; //convert with time into cm/s
+  water_speed = water_speed/10; //convert with time into cm/s
   water_speed = water_speed/51.444; //convert from cm/s to knots
 
   // Check if 60 seconds have passed
