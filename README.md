@@ -5,13 +5,14 @@ Goal of the project is to transmit weather data from a remote buoy 2 miles offsh
 Sensors being used:
 
 IMU (BNO055) 
-PoC: IMU 
+PoC: IMU, IMU Calibration
 https://learn.adafruit.com/adafruit-bno055-absolute-orientation-sensor/overview
 Use: 
   - Wave height measurement
   - Obtain z-axis movement
   - Double integrate for position data over time
   - I2C connection to LilyGo 1262
+  - IMU calibration code will save the state in which IMU was at full 3 calibration
 
 Anemometer (Ecowitt GW1103)
 PoC: LilyGoSerial
