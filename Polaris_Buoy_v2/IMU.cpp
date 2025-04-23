@@ -4,6 +4,9 @@
 #include <Arduino.h>
 #include <HardwareSerial.h>
 #include <ArduinoJson.h>
+#include <EEPROM.h>
+
+#define EEPROM_CALIBRATION_START 0 // Calling IMU memory to get calibration data saved 
 
 static bool parseWindData(const String& message, double& windDir, double& windSpeed) {
   // Clean the message
@@ -32,7 +35,7 @@ static bool parseWindData(const String& message, double& windDir, double& windSp
     return false;
   }
 
-  // ✅ Correct field names
+  //  Correct field names
   if (doc.containsKey("wind_dir_deg") &&
       (doc.containsKey("wind_avg_m_s") || doc.containsKey("wind_max_m_s"))) {
 
@@ -63,9 +66,15 @@ static bool parseWindData(const String& message, double& windDir, double& windSp
 static String getWindInfo(HardwareSerial &serial, Adafruit_BNO055 &bno) {
   double windDir = -1, windSpeed = -1, trueWindDir = -1;
 
-  // Wait for data to be available
+  unsigned long startTime = millis();
+
+  // Wait for data to be available or timeout after 10 seconds
   while (!serial.available()) {
-    delay(10);  // small delay to avoid blocking the loop entirely
+    if (millis() - startTime > 15000) {  // 15 seconds timeout
+      Serial.println("Timeout: No wind data received.");
+      return "W:TIMEOUT\n";
+    }
+    delay(10);  // Prevent CPU hogging
   }
 
   // Read the incoming data
@@ -78,7 +87,7 @@ static String getWindInfo(HardwareSerial &serial, Adafruit_BNO055 &bno) {
     double yaw = event.orientation.x;
 
     // Calculate true wind direction
-    trueWindDir = fmod(windDir + yaw + 360, 360);  // Ensures 0–360 range
+    trueWindDir = fmod(windDir + yaw + 360, 360);  // Normalize to 0–360
 
     // Return the wind data
     return "WD:" + String(windDir, 1) +
@@ -89,3 +98,27 @@ static String getWindInfo(HardwareSerial &serial, Adafruit_BNO055 &bno) {
   // Return error message if parsing fails
   return "W:ERR\n";
 }
+
+
+/////EEPROM FUNCTIONS/////////
+
+static void loadCalibration(Adafruit_BNO055 &bno) {
+  uint8_t calibData[22];
+  for (int i = 0; i < 22; i++) {
+    calibData[i] = EEPROM.read(EEPROM_CALIBRATION_START + i);
+  }
+
+  bno.setSensorOffsets(calibData);
+}
+
+static bool isEEPROMDataAvailable() {
+  for (int i = 0; i < 22; i++) {
+    if (EEPROM.read(EEPROM_CALIBRATION_START + i) == 0xFF) {
+      return false; // Data likely not present
+    }
+  }
+  return true;
+}
+
+
+

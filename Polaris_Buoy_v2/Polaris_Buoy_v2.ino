@@ -4,6 +4,7 @@
 #include "LoRaBoards.h"
 #include "utilities.h"
 #include <RadioLib.h>
+#include <EEPROM.h>
 
 ////////////////////////////////////////////////////////
 /////////// Initialization of variables ////////////////
@@ -12,6 +13,10 @@
 ////////////LoRa//////////////////////////
 // Configuration for SX1262
 SX1262 radio = new Module(RADIO_CS_PIN, RADIO_DIO1_PIN, RADIO_RST_PIN, RADIO_BUSY_PIN);
+
+#define CONFIG_RADIO_BW             500.0
+#define CONFIG_RADIO_SF             12
+
 // Initialize the SX1262 module
 
 // Transmission finished flag
@@ -45,6 +50,7 @@ uint16_t printCounter = 0;
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28, &Wire1);
 
+
 ///////////////// Anemometer ///////////////////////////////
 HardwareSerial Anem_UART(2); // Use UART2 (ESP32-S3)
 
@@ -55,52 +61,67 @@ HardwareSerial Anem_UART(2); // Use UART2 (ESP32-S3)
 ///////////////// Paddle Wheel ///////////////////////////////
 float currentWaterSpeed = 0;
 
+
+////////////////////////////////////////////////////////
+///////////////////// SET UP /////////////////////////////
+////////////////////////////////////////////////////////
+
 void setup() {
   delay(1000);
   Serial.begin(115200);
 
+// initialize the board via the LoRaBoards library. Will automatically detect I2C
   setupBoards();
 
+radio.setBandwidth(CONFIG_RADIO_BW);
+radio.setSpreadingFactor(CONFIG_RADIO_SF);
   
   delay(1500);
   // GPS //
-  GPS_UART.begin(GPSBaud, SERIAL_8N1, GPS_RX, GPS_TX); 
+  GPS_UART.begin(GPSBaud, SERIAL_8N1, GPS_RX, GPS_TX); //Start GPS object
+
   // Anemometer //
   Anem_UART.begin(115200, SERIAL_8N1, Anem_TX, Anem_RX); // UART 2
-  // IMU //
-  Serial.println("UART Receiver Initialized...");
- // Wire.setPins(43, 44);
-//  delay(100);
-// Now try initializing the BNO055
-if (!bno.begin()) {
+  Serial.println("UART Receiver Initialized..."); //Confirm UART2/ Anemometer begins
+
+// IMU //
+if (!bno.begin()) { //check to see if the LilyGo detects the I2C from the BNO055
   Serial.println("No BNO055 detected on Wire1... Check wiring or address!");
 } else {
   Serial.println("BNO055 initialized successfully on Wire1!");
 }
+//Checking to see if EEPROM is available and can load in calibration onto the IMU
+if (isEEPROMDataAvailable()) {
+    loadCalibration(bno);
+    Serial.println("Loaded calibration data from EEPROM.");
+  } else {
+    Serial.println("No calibration data in EEPROM.");
+  }
+
   delay(1000);
-  bno.setExtCrystalUse(true);
-  Serial.println("Sensor Initialized.");
+  bno.setExtCrystalUse(true); 
+  Serial.println("BNO055 Initialized.");
   Serial.println("--------------------------------------------------");
 
   pinMode(BOOT_PIN, INPUT);
 
-  if (!Anem_UART) {
+  if (!Anem_UART) { 
     Serial.println("Anemometer UART failed to initialize!");
-  }
+  } //check for no anemometer UART start
 
   if (!GPS_UART) {
     Serial.println("GPS failed to initialize!");
-  }
+  } //check for no GPS UART start
 
   // Initialize SX1262
   Serial.print(F("[SX1262] Initializing ... "));
-  int state = radio.begin();
+  int state = radio.begin(); //putting the state into an int so if there is an error, can match the code
 
   if (state == RADIOLIB_ERR_NONE) {
-    Serial.println(F("success!"));
+    Serial.println(F("success!")); 
   } else {
     Serial.print(F("failed, code "));
-    Serial.println(state);
+    Serial.println(state); //print state in integer, going to library will give error code
     while (true);
   }
 
@@ -110,25 +131,34 @@ if (!bno.begin()) {
 
 unsigned long lastPrintTime = 0;
 
+////////////////////////////////////////////////////////
+///////////////////// LOOP /////////////////////////////
+////////////////////////////////////////////////////////
+
 void loop() {
   // 1. Read GPS (feed GPS data)
   while (GPS_UART.available()) {
     gps.encode(GPS_UART.read());
   }
-  String gpsStr = getGPS(gps);  // From earlier optimized version
+
+  Serial.print("Getting GPS...");
+  String gpsStr = getGPS(gps);  // Feed getGPS function into string for packaging
 
   // 2. Read water speed
-  String speedStr = getWaterSpeedInfo();  // ~10s blocking pulse count
+  Serial.println("Getting water speed. . . ");
+  String speedStr = getWaterSpeedInfo();  // ~20s blocking pulse count
 
   // 3. Read wave height (also ~6s of samples)
+  Serial.println("Getting Wave height. . . ");
   String waveStr = getWaveHeightInfo(bno);
 
   // 4. Read wind info
-  String windStr = getWindInfo(Anem_UART, bno);  // Compact version
+  Serial.println("Getting anemometer data. . . ");
+  String windStr = getWindInfo(Anem_UART, bno);  // will parse JSON and give wind speed, parsed direction, and true corrected direction (based on IMU)
 
   // 5. Combine and send/report
   String finalReport = gpsStr + speedStr + waveStr + windStr;
-  Serial.print(finalReport);
+  Serial.println(finalReport);
 
   Serial.println("[LoRa] Sending data...");
   int state = radio.transmit(finalReport);
