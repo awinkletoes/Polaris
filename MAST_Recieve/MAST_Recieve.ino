@@ -6,8 +6,9 @@
 // SX1262 Setup - Match your pinout
 SX1262 radio = new Module(RADIO_CS_PIN, RADIO_DIO1_PIN, RADIO_RST_PIN, RADIO_BUSY_PIN);
 
-#define CONFIG_RADIO_BW             500.0
-#define CONFIG_RADIO_SF             11
+#define CONFIG_RADIO_BW             125.0
+#define CONFIG_RADIO_SF             12
+#define CONFIG_RADIO_OUTPUT_POWER   22
 
 volatile bool receivedFlag = false;
 String receivedData = "";
@@ -25,6 +26,7 @@ void setup() {
 
 radio.setBandwidth(CONFIG_RADIO_BW);
 radio.setSpreadingFactor(CONFIG_RADIO_SF);
+radio.setOutputPower(CONFIG_RADIO_OUTPUT_POWER);
 
   // Initialize the LoRa module
   int state = radio.begin();

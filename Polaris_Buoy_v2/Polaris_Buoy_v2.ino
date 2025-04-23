@@ -16,6 +16,7 @@ SX1262 radio = new Module(RADIO_CS_PIN, RADIO_DIO1_PIN, RADIO_RST_PIN, RADIO_BUS
 
 #define CONFIG_RADIO_BW             500.0
 #define CONFIG_RADIO_SF             12
+#define CONFIG_RADIO_OUTPUT_POWER   22
 
 // Initialize the SX1262 module
 
@@ -71,10 +72,11 @@ void setup() {
   Serial.begin(115200);
 
 // initialize the board via the LoRaBoards library. Will automatically detect I2C
-  setupBoards();
+setupBoards();
 
 radio.setBandwidth(CONFIG_RADIO_BW);
 radio.setSpreadingFactor(CONFIG_RADIO_SF);
+radio.setOutputPower(CONFIG_RADIO_OUTPUT_POWER);
   
   delay(1500);
   // GPS //
