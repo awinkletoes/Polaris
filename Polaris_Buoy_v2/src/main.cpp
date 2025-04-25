@@ -37,16 +37,6 @@ void setFlag(void) {
   transmittedFlag = true;
 }
 
-///////////////// GPS ///////////////////////////////
-static const uint32_t GPSBaud = 9600;
-
-HardwareSerial GPS_UART(1);
-
-#define GPS_RX 16 //GPS Receive
-#define GPS_TX 15 //GPS Transmit
-
-TinyGPSPlus gps; // The TinyGPSPlus object
-
 ///////////////// IMU ///////////////////////////////
 double DEG_2_RAD = 0.01745329251;
 double windDir = 0;
@@ -84,7 +74,7 @@ void setup() {
 
   delay(1500);
   // GPS //
-  GPS_UART.begin(GPSBaud, SERIAL_8N1, GPS_RX, GPS_TX); //Start GPS object
+  initializeGPS();
 
   // Anemometer //
   Anem_UART.begin(115200, SERIAL_8N1, Anem_TX, Anem_RX); // UART 2
@@ -114,10 +104,6 @@ void setup() {
   if (!Anem_UART) {
     Serial.println("Anemometer UART failed to initialize!");
   } //check for no anemometer UART start
-
-  if (!GPS_UART) {
-    Serial.println("GPS failed to initialize!");
-  } //check for no GPS UART start
 
   // Initialize SX1262
   Serial.print(F("[SX1262] Initializing ... "));
@@ -149,12 +135,8 @@ unsigned long lastPrintTime = 0;
 
 void loop() {
   // 1. Read GPS (feed GPS data)
-  while (GPS_UART.available()) {
-    gps.encode(GPS_UART.read());
-  }
-
   Serial.println("Getting GPS...");
-  Telemetry telemetry = getGPS(gps);  // Feed getGPS function into string for packaging
+  Telemetry telemetry = getGPS();  // Feed getGPS function into string for packaging
 
   // 2. Read water speed
   Serial.println("Getting water speed. . . ");
