@@ -1,22 +1,76 @@
+#include "GPS.h"
 #include <TinyGPS++.h>
 
-static void smartDelay(TinyGPSPlus gps, unsigned long ms)
+HardwareSerial GPS_UART(GPS_UART_NR);
+char gpsData[64];
+portMUX_TYPE gpsMutex = portMUX_INITIALIZER_UNLOCKED;
+
+void gpsReaderTask(void* pvParameters)
 {
-  unsigned long start = millis();
-  do 
-  {
-    while (Serial1.available()) //changed to serial1
-      gps.encode(Serial1.read()); //changed to serial1
-  } while (millis() - start < ms);
+    const auto NO_DATA = "NaN,NaN,NaN\n";
+    TinyGPSPlus gps;
+
+    snprintf(gpsData, sizeof(gpsData), NO_DATA);
+    Serial.println("GPS task started");
+
+    for (;;)
+    {
+        while (GPS_UART.available())
+        {
+            int c = GPS_UART.read();
+            if (gps.encode(c))
+            {
+                if (gps.location.isValid())
+                {
+                    portENTER_CRITICAL(&gpsMutex);
+                    snprintf(gpsData, sizeof(gpsData), "%.6f,%.6f,%.2f\n",
+                             gps.location.lat(), gps.location.lng(), gps.altitude.meters());
+                    portEXIT_CRITICAL(&gpsMutex);
+                }
+                else
+                {
+                    portENTER_CRITICAL(&gpsMutex);
+                    snprintf(gpsData, sizeof(gpsData), NO_DATA);
+                    portEXIT_CRITICAL(&gpsMutex);
+                }
+            }
+        }
+        // Wait a little before trying to read more from the UART
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
 }
 
-static String getGPS(TinyGPSPlus& gps) {
-  if (gps.location.isValid()) {
-    float lat = gps.location.lat();
-    float lng = gps.location.lng();
-    float alt = gps.altitude.meters();
-    return String(lat, 6) + "," + String(lng, 6) + "," + String(alt, 2);
-  } else {
-    return "NaN,NaN,NaN";  // or optionally return an empty string ""
-  }
+bool initializeGPS()
+{
+    GPS_UART.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX); //Start GPS object
+
+    if (!GPS_UART)
+    {
+        Serial.println("GPS UART failed to initialize!");
+        return false;
+    }
+
+    BaseType_t taskCreated = xTaskCreatePinnedToCore(
+        gpsReaderTask,
+        "GPS Data",
+        4096,
+        nullptr,
+        1, // Priority of the task (1 is reasonable for non-critical)
+        nullptr,
+        1); // Core ID (0 or 1) - 1 is APP_CPU, recommended for Arduino
+    if (taskCreated != pdPASS)
+    {
+        Serial.println("Failed to create GPS task");
+        return false;
+    }
+
+    return true;
+}
+
+String getGPS()
+{
+    portENTER_CRITICAL(&gpsMutex);
+    String gpsString = String(gpsData);
+    portEXIT_CRITICAL(&gpsMutex);
+    return gpsString;
 }

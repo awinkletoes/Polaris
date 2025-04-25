@@ -29,16 +29,6 @@ void setFlag(void) {
   transmittedFlag = true;
 }
 
-///////////////// GPS ///////////////////////////////
-static const uint32_t GPSBaud = 9600;
-
-HardwareSerial GPS_UART(1);
-
-#define GPS_RX 15 //GPS Receive
-#define GPS_TX 16 //GPS Transmit
-
-TinyGPSPlus gps; // The TinyGPSPlus object
-
 ///////////////// IMU ///////////////////////////////
 double DEG_2_RAD = 0.01745329251;
 double windDir = 0;
@@ -80,7 +70,7 @@ radio.setOutputPower(CONFIG_RADIO_OUTPUT_POWER);
   
   delay(1500);
   // GPS //
-  GPS_UART.begin(GPSBaud, SERIAL_8N1, GPS_RX, GPS_TX); //Start GPS object
+  initializeGPS();
 
   // Anemometer //
   Anem_UART.begin(115200, SERIAL_8N1, Anem_TX, Anem_RX); // UART 2
@@ -111,10 +101,6 @@ if (isEEPROMDataAvailable()) {
     Serial.println("Anemometer UART failed to initialize!");
   } //check for no anemometer UART start
 
-  if (!GPS_UART) {
-    Serial.println("GPS failed to initialize!");
-  } //check for no GPS UART start
-
   // Initialize SX1262
   Serial.print(F("[SX1262] Initializing ... "));
   int state = radio.begin(); //putting the state into an int so if there is an error, can match the code
@@ -139,12 +125,8 @@ unsigned long lastPrintTime = 0;
 
 void loop() {
   // 1. Read GPS (feed GPS data)
-  while (GPS_UART.available()) {
-    gps.encode(GPS_UART.read());
-  }
-
   Serial.print("Getting GPS...");
-  String gpsStr = getGPS(gps);  // Feed getGPS function into string for packaging
+  String gpsStr = getGPS();  // Feed getGPS function into string for packaging
 
   // 2. Read water speed
   Serial.println("Getting water speed. . . ");
