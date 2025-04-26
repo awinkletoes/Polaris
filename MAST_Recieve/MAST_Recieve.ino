@@ -6,9 +6,10 @@
 // SX1262 Setup - Match your pinout
 SX1262 radio = new Module(RADIO_CS_PIN, RADIO_DIO1_PIN, RADIO_RST_PIN, RADIO_BUSY_PIN);
 
-#define CONFIG_RADIO_BW             125.0
+#define CONFIG_RADIO_BW             500.0
 #define CONFIG_RADIO_SF             12
 #define CONFIG_RADIO_OUTPUT_POWER   22
+#define CONFIG_RADIO_RX_BOOSTED     true
 
 volatile bool receivedFlag = false;
 String receivedData = "";
@@ -27,6 +28,7 @@ void setup() {
 radio.setBandwidth(CONFIG_RADIO_BW);
 radio.setSpreadingFactor(CONFIG_RADIO_SF);
 radio.setOutputPower(CONFIG_RADIO_OUTPUT_POWER);
+radio.setRxBoostedGainMode(CONFIG_RADIO_RX_BOOSTED);
 
   // Initialize the LoRa module
   int state = radio.begin();
@@ -57,17 +59,19 @@ void loop() {
 
     String rssi;
     String snr;
+    String frequencyError;
 
     // Read the received data
     rssi = String(radio.getRSSI()) + "dBm";
     snr = String(radio.getSNR()) + "dB";
+    frequencyError = String(radio.getFrequencyError()) + "Hz";
     String str;
     int state = radio.readData(str);
 
-    if (state == RADIOLIB_ERR_NONE) {
-      Serial.println("[LoRa] Received data:");
-      Serial.println(str);
+    Serial.println("[LoRa] Received data:");
+    Serial.println(str);
 
+    if (state == RADIOLIB_ERR_NONE) {
   //print RSSI 
       Serial.print(F("Radio RSSI:\t\t"));
       Serial.println(rssi);
@@ -75,6 +79,9 @@ void loop() {
   // print SNR (Signal-to-Noise Ratio)
       Serial.print(F("Radio SNR:\t\t"));
       Serial.println(snr);
+
+      Serial.print(F("Frequency error:\t"));
+      Serial.println(frequencyError);
     } else {
       Serial.print("[LoRa] Receive failed, code ");
       Serial.println(state);
