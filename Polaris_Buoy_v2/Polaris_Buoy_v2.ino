@@ -17,6 +17,8 @@ SX1262 radio = new Module(RADIO_CS_PIN, RADIO_DIO1_PIN, RADIO_RST_PIN, RADIO_BUS
 #define CONFIG_RADIO_BW             500.0
 #define CONFIG_RADIO_SF             12
 #define CONFIG_RADIO_OUTPUT_POWER   22
+#define CONFIG_RADIO_OUTPUT_CURRENT 140
+#define CONFIG_RADIO_CODING_RATE    8
 
 // Initialize the SX1262 module
 
@@ -77,7 +79,9 @@ setupBoards();
 radio.setBandwidth(CONFIG_RADIO_BW);
 radio.setSpreadingFactor(CONFIG_RADIO_SF);
 radio.setOutputPower(CONFIG_RADIO_OUTPUT_POWER);
-  
+radio.setCurrentLimit(CONFIG_RADIO_OUTPUT_CURRENT);
+radio.setCodingRate(CONFIG_RADIO_CODING_RATE);
+
   delay(1500);
   // GPS //
   GPS_UART.begin(GPSBaud, SERIAL_8N1, GPS_RX, GPS_TX); //Start GPS object
