@@ -6,6 +6,7 @@
 // SX1262 Setup - Match your pinout
 SX1262 radio = new Module(RADIO_CS_PIN, RADIO_DIO1_PIN, RADIO_RST_PIN, RADIO_BUSY_PIN);
 
+#define CONFIG_RADIO_FREQUENCY      915.0
 #define CONFIG_RADIO_BW             500.0
 #define CONFIG_RADIO_SF             12
 #define CONFIG_RADIO_OUTPUT_POWER   22
@@ -25,13 +26,13 @@ void setup() {
   Serial.println("Starting LoRa Receiver...");
   setupBoards();
 
-radio.setBandwidth(CONFIG_RADIO_BW);
-radio.setSpreadingFactor(CONFIG_RADIO_SF);
-radio.setOutputPower(CONFIG_RADIO_OUTPUT_POWER);
-radio.setRxBoostedGainMode(CONFIG_RADIO_RX_BOOSTED);
-
   // Initialize the LoRa module
   int state = radio.begin();
+  radio.setFrequency(CONFIG_RADIO_FREQUENCY);
+  radio.setBandwidth(CONFIG_RADIO_BW);
+  radio.setSpreadingFactor(CONFIG_RADIO_SF);
+  radio.setOutputPower(CONFIG_RADIO_OUTPUT_POWER);
+  radio.setRxBoostedGainMode(CONFIG_RADIO_RX_BOOSTED);
   if (state == RADIOLIB_ERR_NONE) {
     Serial.println("[SX1262] Initialization successful!");
   } else {
@@ -44,7 +45,7 @@ radio.setRxBoostedGainMode(CONFIG_RADIO_RX_BOOSTED);
   radio.setDio1Action(setFlag);
 
   // Start listening for packets
-  Serial.println("[SX1262] Starting receive mode...");
+  Serial.printf("[SX1262] Starting receive mode... [%fMHz SF%d BW%.1f]:\n", CONFIG_RADIO_FREQUENCY, CONFIG_RADIO_SF, CONFIG_RADIO_BW);
   state = radio.startReceive();
   if (state != RADIOLIB_ERR_NONE) {
     Serial.print("[SX1262] Receive mode failed, code ");
@@ -68,20 +69,25 @@ void loop() {
     String str;
     int state = radio.readData(str);
 
-    Serial.println("[LoRa] Received data:");
+    Serial.printf("[LoRa] Received data [%fMHz SF%d BW%.1f]:\n", CONFIG_RADIO_FREQUENCY, CONFIG_RADIO_SF, CONFIG_RADIO_BW);
     Serial.println(str);
 
+    //print RSSI
+    Serial.print(F("Radio RSSI:\t\t"));
+    Serial.println(rssi);
+
+    // print SNR (Signal-to-Noise Ratio)
+    Serial.print(F("Radio SNR:\t\t"));
+    Serial.println(snr);
+
+    Serial.print(F("Frequency error:\t"));
+    Serial.println(frequencyError);
+
     if (state == RADIOLIB_ERR_NONE) {
-  //print RSSI 
-      Serial.print(F("Radio RSSI:\t\t"));
-      Serial.println(rssi);
-
-  // print SNR (Signal-to-Noise Ratio)
-      Serial.print(F("Radio SNR:\t\t"));
-      Serial.println(snr);
-
-      Serial.print(F("Frequency error:\t"));
-      Serial.println(frequencyError);
+      Serial.println("[LoRa] Receive passed CRC");
+    } else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
+      // packet was received, but is malformed
+      Serial.println(F("[LoRa] CRC error!"));
     } else {
       Serial.print("[LoRa] Receive failed, code ");
       Serial.println(state);
