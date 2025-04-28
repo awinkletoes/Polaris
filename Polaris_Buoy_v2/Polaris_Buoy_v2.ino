@@ -14,6 +14,7 @@
 // Configuration for SX1262
 SX1262 radio = new Module(RADIO_CS_PIN, RADIO_DIO1_PIN, RADIO_RST_PIN, RADIO_BUSY_PIN);
 
+#define CONFIG_RADIO_FREQUENCY      915.0
 #define CONFIG_RADIO_BW             500.0
 #define CONFIG_RADIO_SF             12
 #define CONFIG_RADIO_OUTPUT_POWER   22
@@ -73,14 +74,8 @@ void setup() {
   delay(1000);
   Serial.begin(115200);
 
-// initialize the board via the LoRaBoards library. Will automatically detect I2C
-setupBoards();
-
-radio.setBandwidth(CONFIG_RADIO_BW);
-radio.setSpreadingFactor(CONFIG_RADIO_SF);
-radio.setOutputPower(CONFIG_RADIO_OUTPUT_POWER);
-radio.setCurrentLimit(CONFIG_RADIO_OUTPUT_CURRENT);
-radio.setCodingRate(CONFIG_RADIO_CODING_RATE);
+  // initialize the board via the LoRaBoards library. Will automatically detect I2C
+  setupBoards();
 
   delay(1500);
   // GPS //
@@ -90,14 +85,14 @@ radio.setCodingRate(CONFIG_RADIO_CODING_RATE);
   Anem_UART.begin(115200, SERIAL_8N1, Anem_TX, Anem_RX); // UART 2
   Serial.println("UART Receiver Initialized..."); //Confirm UART2/ Anemometer begins
 
-// IMU //
-if (!bno.begin()) { //check to see if the LilyGo detects the I2C from the BNO055
-  Serial.println("No BNO055 detected on Wire1... Check wiring or address!");
-} else {
-  Serial.println("BNO055 initialized successfully on Wire1!");
-}
-//Checking to see if EEPROM is available and can load in calibration onto the IMU
-if (isEEPROMDataAvailable()) {
+  // IMU //
+  if (!bno.begin()) { //check to see if the LilyGo detects the I2C from the BNO055
+    Serial.println("No BNO055 detected on Wire1... Check wiring or address!");
+  } else {
+    Serial.println("BNO055 initialized successfully on Wire1!");
+  }
+  //Checking to see if EEPROM is available and can load in calibration onto the IMU
+  if (isEEPROMDataAvailable()) {
     loadCalibration(bno);
     Serial.println("Loaded calibration data from EEPROM.");
   } else {
@@ -105,13 +100,13 @@ if (isEEPROMDataAvailable()) {
   }
 
   delay(1000);
-  bno.setExtCrystalUse(true); 
+  bno.setExtCrystalUse(true);
   Serial.println("BNO055 Initialized.");
   Serial.println("--------------------------------------------------");
 
   pinMode(BOOT_PIN, INPUT);
 
-  if (!Anem_UART) { 
+  if (!Anem_UART) {
     Serial.println("Anemometer UART failed to initialize!");
   } //check for no anemometer UART start
 
@@ -121,10 +116,16 @@ if (isEEPROMDataAvailable()) {
 
   // Initialize SX1262
   Serial.print(F("[SX1262] Initializing ... "));
-  int state = radio.begin(); //putting the state into an int so if there is an error, can match the code
+  int state = radio.begin();  //putting the state into an int so if there is an error, can match the code
+  radio.setFrequency(CONFIG_RADIO_FREQUENCY);
+  radio.setBandwidth(CONFIG_RADIO_BW);
+  radio.setSpreadingFactor(CONFIG_RADIO_SF);
+  radio.setOutputPower(CONFIG_RADIO_OUTPUT_POWER);
+  radio.setCurrentLimit(CONFIG_RADIO_OUTPUT_CURRENT);
+  radio.setCodingRate(CONFIG_RADIO_CODING_RATE);
 
   if (state == RADIOLIB_ERR_NONE) {
-    Serial.println(F("success!")); 
+    Serial.println(F("success!"));
   } else {
     Serial.print(F("failed, code "));
     Serial.println(state); //print state in integer, going to library will give error code
@@ -166,7 +167,7 @@ void loop() {
   String finalReport = gpsStr + speedStr + waveStr + windStr;
   Serial.println(finalReport);
 
-  Serial.println("[LoRa] Sending data...");
+  Serial.printf("[LoRa] Sending data... [%fMHz SF%d BW%.1f]:\n", CONFIG_RADIO_FREQUENCY, CONFIG_RADIO_SF, CONFIG_RADIO_BW);
   int state = radio.transmit(finalReport);
 
   if (state == RADIOLIB_ERR_NONE) {
