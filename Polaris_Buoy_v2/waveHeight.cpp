@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Adafruit_BNO055.h>
 
+#include "buoy_data.pb.h"
 
 const int MAX_SAMPLES = 600;
 static float accZ_buffer[MAX_SAMPLES];
@@ -71,8 +72,11 @@ static float getWaveHeight(Adafruit_BNO055& bno) {
 }
 
 // Usage
-static String getWaveHeightInfo(Adafruit_BNO055& bno) {
+static WaveData getWaveHeightInfo(Adafruit_BNO055& bno) {
+  WaveData waveData = WaveData_init_zero;
   float h = getWaveHeight(bno);
-  return (h < 0) ? "H:ERR\n" : "H:" + String(h, 2) + "\n";  // e.g., H:0.23
+  waveData.has_maximumWaveHeight_meters_scaled100 = h >= 0;
+  waveData.maximumWaveHeight_meters_scaled100 = h * 100;
+  return waveData;
 }
 

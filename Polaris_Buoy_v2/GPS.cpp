@@ -1,4 +1,5 @@
 #include <TinyGPS++.h>
+#include "buoy_data.pb.h"
 
 static void smartDelay(TinyGPSPlus gps, unsigned long ms)
 {
@@ -10,13 +11,15 @@ static void smartDelay(TinyGPSPlus gps, unsigned long ms)
   } while (millis() - start < ms);
 }
 
-static String getGPS(TinyGPSPlus& gps) {
+static Telemetry getGPS(TinyGPSPlus& gps) {
+  Telemetry telemetry = Telemetry_init_zero;
   if (gps.location.isValid()) {
-    float lat = gps.location.lat();
-    float lng = gps.location.lng();
-    float alt = gps.altitude.meters();
-    return String(lat, 6) + "," + String(lng, 6) + "," + String(alt, 2);
-  } else {
-    return "NaN,NaN,NaN";  // or optionally return an empty string ""
+    telemetry.has_gpsLatitude_degrees_scaled10000000 = true;
+    telemetry.gpsLatitude_degrees_scaled10000000 = gps.location.lat() * 10000000;
+    telemetry.has_gpsLongitude_degrees_scaled10000000 = true;
+    telemetry.gpsLongitude_degrees_scaled10000000 = gps.location.lng() * 10000000;
+    telemetry.has_gpsAltitude_meters_scaled100 = true;
+    telemetry.gpsAltitude_meters_scaled100 = gps.altitude.meters() * 100;
   }
+  return telemetry;
 }
