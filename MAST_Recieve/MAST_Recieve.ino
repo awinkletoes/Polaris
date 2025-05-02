@@ -1,3 +1,8 @@
+#include <Arduino.h>
+#include <WiFi.h>
+#include <WiFiMulti.h>
+#include <HTTPClient.h>
+
 #include <RadioLib.h>
 #include "LoRaBoards.h"
 #include "utilities.h"
@@ -15,6 +20,16 @@ SX1262 radio = new Module(RADIO_CS_PIN, RADIO_DIO1_PIN, RADIO_RST_PIN, RADIO_BUS
 #define CONFIG_RADIO_OUTPUT_POWER   22
 #define CONFIG_RADIO_RX_BOOSTED     true
 
+#ifndef WIFI_SSID
+#define WIFI_SSID "SSID"
+#endif
+#ifndef WIFI_PASSWORD
+#define WIFI_PASSWORD "PASSWORD"
+#endif
+
+WiFiMulti wifiMulti;
+HTTPClient http;
+
 volatile bool receivedFlag = false;
 String receivedData = "";
 
@@ -28,6 +43,13 @@ void setup() {
   delay(1500);
   Serial.println("Starting LoRa Receiver...");
   setupBoards();
+  // TODO: setupBoards turns on the wifi access point, so we need to turn it off
+  WiFi.softAPdisconnect(true);
+
+  // Initialize the WiFi module
+  Serial.println("Connecting to WiFi...");
+  wifiMulti.addAP(WIFI_SSID, WIFI_PASSWORD);
+  http.setReuse(true);
 
   // Initialize the LoRa module
   int state = radio.begin();
@@ -58,6 +80,7 @@ void setup() {
 }
 
 void loop() {
+  wifiMulti.run(5000);
   if (receivedFlag) {
     receivedFlag = false;
 
@@ -86,6 +109,11 @@ void loop() {
     Serial.print(F("Frequency error:\t"));
     Serial.println(frequencyError);
 
+    String dataURI = "/weatherstation/updateweatherstation.php?";
+    dataURI += "rxRSSI=" + String(radio.getRSSI(), 1);
+    dataURI += "&rxSNR=" + String(radio.getSNR(), 1);
+    dataURI += "&rxFrequencyError=" + String(radio.getFrequencyError(), 1);
+
     if (state == RADIOLIB_ERR_NONE) {
       Serial.println("[LoRa] Receive passed CRC");
 
@@ -102,12 +130,14 @@ void loop() {
         if (decoded.windData.has_windSpeedAverage_kmh_scaled100)
         {
           Serial.println(F("Wind Speed: "));
-          Serial.println(decoded.windData.has_windSpeedAverage_kmh_scaled100 / 100.0, 2);
+          Serial.println(decoded.windData.windSpeedAverage_kmh_scaled100 / 100.0, 2);
+          dataURI += "&windSpeedKph=" + String(decoded.windData.has_windSpeedAverage_kmh_scaled100 / 100.0, 2);
         }
         if (decoded.windData.has_windSpeedDirection_degrees)
         {
           Serial.println(F("Wind Direction: "));
-          Serial.println(decoded.windData.has_windSpeedDirection_degrees);
+          Serial.println(decoded.windData.windSpeedDirection_degrees);
+          dataURI += "&windDirectionDegrees=" + String(decoded.windData.windSpeedDirection_degrees);
         }
       }
       if (decoded.has_currentData)
@@ -115,12 +145,14 @@ void loop() {
         if (decoded.currentData.has_surfaceCurrentDirection_degrees)
         {
           Serial.println(F("Surface Current Direction: "));
-          Serial.println(decoded.currentData.has_surfaceCurrentDirection_degrees);
+          Serial.println(decoded.currentData.surfaceCurrentDirection_degrees);
+          dataURI += "&waterDirection=" + String(decoded.currentData.surfaceCurrentDirection_degrees);
         }
         if (decoded.currentData.has_surfaceCurrentSpeed_kmh_scaled100)
         {
           Serial.println(F("Surface Current Speed: "));
-          Serial.println(decoded.currentData.has_surfaceCurrentSpeed_kmh_scaled100 / 100.0, 2);
+          Serial.println(decoded.currentData.surfaceCurrentSpeed_kmh_scaled100 / 100.0, 2);
+          dataURI += "&waterSpeedKn=:" + String(decoded.currentData.surfaceCurrentSpeed_kmh_scaled100 * 1.85 / 100.0, 2);
         }
       }
       if (decoded.has_waveData)
@@ -128,7 +160,14 @@ void loop() {
         if (decoded.waveData.has_maximumWaveHeight_meters_scaled100)
         {
           Serial.println(F("Maximum Wave Height: "));
-          Serial.println(decoded.waveData.has_maximumWaveHeight_meters_scaled100 / 100.0, 2);
+          Serial.println(decoded.waveData.maximumWaveHeight_meters_scaled100 / 100.0, 2);
+          dataURI += "&waveHeightFt=" + String(decoded.waveData.maximumWaveHeight_meters_scaled100 * 3.28 / 100.0, 2);
+        }
+        if (decoded.waveData.has_dominantWavePeriod_seconds_scaled100)
+        {
+          Serial.println(F("Dominant Wave Period: "));
+          Serial.println(decoded.waveData.dominantWavePeriod_seconds_scaled100 / 100.0, 2);
+          dataURI += "&wavePeriodSeconds=" + String(decoded.waveData.dominantWavePeriod_seconds_scaled100 / 100.0, 2);
         }
       }
       if (decoded.has_telemetry)
@@ -136,18 +175,43 @@ void loop() {
         if (decoded.telemetry.has_gpsAltitude_meters_scaled100)
         {
           Serial.println(F("GPS Altitude: "));
-          Serial.println(decoded.telemetry.has_gpsAltitude_meters_scaled100 / 100.0, 2);
+          Serial.println(decoded.telemetry.gpsAltitude_meters_scaled100 / 100.0, 2);
+          dataURI += "&gpsAltitudeMeters=" + String(decoded.telemetry.gpsAltitude_meters_scaled100 / 100.0, 2);
         }
         if (decoded.telemetry.has_gpsLatitude_degrees_scaled10000000)
         {
           Serial.println(F("GPS Latitude: "));
-          Serial.println(decoded.telemetry.has_gpsLatitude_degrees_scaled10000000 / 10000000.0, 2);
+          Serial.println(decoded.telemetry.gpsLatitude_degrees_scaled10000000 / 10000000.0, 2);
+          dataURI += "&gpsLat=" + String(decoded.telemetry.gpsLatitude_degrees_scaled10000000 / 10000000.0, 7);
         }
         if (decoded.telemetry.has_gpsLongitude_degrees_scaled10000000)
         {
           Serial.println(F("GPS Longitude: "));
-          Serial.println(decoded.telemetry.has_gpsLongitude_degrees_scaled10000000 / 10000000.0, 2);
+          Serial.println(decoded.telemetry.gpsLongitude_degrees_scaled10000000 / 10000000.0, 2);
+          dataURI += "&gpsLong=" + String(decoded.telemetry.gpsLongitude_degrees_scaled10000000 / 10000000.0, 7);
         }
+      }
+
+      if (WiFi.status() == WL_CONNECTED)
+      {
+        http.begin("weewx.milwaukeesailing.net", 8089, dataURI);
+        int httpCode = http.GET();
+        if (httpCode > 0) {
+          Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+
+          if (httpCode == HTTP_CODE_OK) {
+            http.writeToStream(&Serial);
+            Serial.println();
+          }
+        } else {
+          Serial.printf("[HTTP] GET... failed, error: %s\n", HTTPClient::errorToString(httpCode).c_str());
+        }
+
+        http.end();
+      }
+      else
+      {
+        Serial.println("WiFi not connected, not uploading...");
       }
     } else if (state == RADIOLIB_ERR_CRC_MISMATCH) {
       // packet was received, but is malformed
