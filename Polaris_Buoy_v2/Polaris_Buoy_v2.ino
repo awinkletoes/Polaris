@@ -6,6 +6,9 @@
 #include <RadioLib.h>
 #include <EEPROM.h>
 
+#include "buoy_data.pb.h""
+#include "pb_encode.h"
+
 ////////////////////////////////////////////////////////
 /////////// Initialization of variables ////////////////
 ////////////////////////////////////////////////////////
@@ -148,33 +151,47 @@ void loop() {
     gps.encode(GPS_UART.read());
   }
 
-  Serial.print("Getting GPS...");
-  String gpsStr = getGPS(gps);  // Feed getGPS function into string for packaging
+  Serial.println("Getting GPS...");
+  Telemetry telemetry = getGPS(gps);  // Feed getGPS function into string for packaging
 
   // 2. Read water speed
   Serial.println("Getting water speed. . . ");
-  String speedStr = getWaterSpeedInfo();  // ~20s blocking pulse count
+  CurrentData current_data = getWaterSpeedInfo();  // ~20s blocking pulse count
 
   // 3. Read wave height (also ~6s of samples)
   Serial.println("Getting Wave height. . . ");
-  String waveStr = getWaveHeightInfo(bno);
+  WaveData wave_data = getWaveHeightInfo(bno);
 
   // 4. Read wind info
   Serial.println("Getting anemometer data. . . ");
-  String windStr = getWindInfo(Anem_UART, bno);  // will parse JSON and give wind speed, parsed direction, and true corrected direction (based on IMU)
+  WindData wind_data = getWindInfo(Anem_UART, bno);  // will parse JSON and give wind speed, parsed direction, and true corrected direction (based on IMU)
 
   // 5. Combine and send/report
-  String finalReport = gpsStr + speedStr + waveStr + windStr;
-  Serial.println(finalReport);
+  BuoyData buoy_data = BuoyData_init_zero;
+  buoy_data.has_telemetry = telemetry.has_gpsLatitude_degrees_scaled10000000;
+  buoy_data.telemetry = telemetry;
+  buoy_data.has_currentData = current_data.has_surfaceCurrentSpeed_kmh_scaled100;
+  buoy_data.currentData = current_data;
+  buoy_data.has_waveData = wave_data.has_maximumWaveHeight_meters_scaled100;
+  buoy_data.waveData = wave_data;
+  buoy_data.has_windData = wind_data.has_windSpeedAverage_kmh_scaled100;
+  buoy_data.windData = wind_data;
 
-  Serial.printf("[LoRa] Sending data... [%fMHz SF%d BW%.1f]:\n", CONFIG_RADIO_FREQUENCY, CONFIG_RADIO_SF, CONFIG_RADIO_BW);
-  int state = radio.transmit(finalReport);
+  uint8_t buffer[256];
+  pb_ostream_t ostream = pb_ostream_from_buffer(buffer, sizeof(buffer));
 
-  if (state == RADIOLIB_ERR_NONE) {
-    Serial.println("[LoRa] Transmission successful!");
+  if (!pb_encode(&ostream, &BuoyData_msg, &buoy_data)) {
+    Serial.println("Failed to encode message");
   } else {
-    Serial.print("[LoRa] Failed to transmit. Code: ");
-    Serial.println(state);
+    Serial.printf("[LoRa] Sending %d bytes which will take %dms... [%fMHz SF%d BW%.1f]:\n", ostream.bytes_written, radio.getTimeOnAir(ostream.bytes_written) / 1000, CONFIG_RADIO_FREQUENCY, CONFIG_RADIO_SF, CONFIG_RADIO_BW);
+    int state = radio.transmit(buffer, ostream.bytes_written);
+
+    if (state == RADIOLIB_ERR_NONE) {
+      Serial.println("[LoRa] Transmission successful!");
+    } else {
+      Serial.print("[LoRa] Failed to transmit. Code: ");
+      Serial.println(state);
+    }
   }
 
   // Wait before sending again
