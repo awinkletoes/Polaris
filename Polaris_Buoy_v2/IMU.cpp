@@ -6,6 +6,8 @@
 #include <ArduinoJson.h>
 #include <EEPROM.h>
 
+#include "buoy_data.pb.h"
+
 #define EEPROM_CALIBRATION_START 0 // Calling IMU memory to get calibration data saved 
 
 static bool parseWindData(const String& message, double& windDir, double& windSpeed) {
@@ -63,8 +65,9 @@ static bool parseWindData(const String& message, double& windDir, double& windSp
 
 
 // Collects wind info and returns a report String
-static String getWindInfo(HardwareSerial &serial, Adafruit_BNO055 &bno) {
+static WindData getWindInfo(HardwareSerial &serial, Adafruit_BNO055 &bno) {
   double windDir = -1, windSpeed = -1, trueWindDir = -1;
+  WindData windData = WindData_init_zero;
 
   unsigned long startTime = millis();
 
@@ -72,7 +75,7 @@ static String getWindInfo(HardwareSerial &serial, Adafruit_BNO055 &bno) {
   while (!serial.available()) {
     if (millis() - startTime > 15000) {  // 15 seconds timeout
       Serial.println("Timeout: No wind data received.");
-      return "W:TIMEOUT\n";
+      return windData;
     }
     delay(10);  // Prevent CPU hogging
   }
@@ -89,14 +92,14 @@ static String getWindInfo(HardwareSerial &serial, Adafruit_BNO055 &bno) {
     // Calculate true wind direction
     trueWindDir = fmod(windDir + yaw + 360, 360);  // Normalize to 0–360
 
-    // Return the wind data
-    return "WD:" + String(windDir, 1) +
-           "WS:" + String(windSpeed, 1) +
-           "TWD:" + String(trueWindDir, 1) + "\n";
+    windData.has_windSpeedAverage_kmh_scaled100 = true;
+    windData.windSpeedAverage_kmh_scaled100 = windSpeed * 3.6 * 100;
+    windData.has_windSpeedDirection_degrees = true;
+    windData.windSpeedDirection_degrees = trueWindDir;
   }
 
-  // Return error message if parsing fails
-  return "W:ERR\n";
+  // Return the wind data
+  return windData;
 }
 
 
