@@ -22,10 +22,10 @@ WindData create_wind_data(bool complete_data_set)
 AirData create_air_data(bool complete_data_set)
 {
     return (AirData){
-        .has_airTemperature_celsius_scaled100 = complete_data_set,
-        .airTemperature_celsius_scaled100 = 40 * 100,
-        .has_airRelativeHumidity_percent_scaled100 = complete_data_set,
-        .airRelativeHumidity_percent_scaled100 = 100 * 100,
+        .has_airTemperature_celsius_scaled10 = complete_data_set,
+        .airTemperature_celsius_scaled10 = 40 * 10,
+        .has_airRelativeHumidity_percent_scaled10 = complete_data_set,
+        .airRelativeHumidity_percent_scaled10 = 100 * 10,
         .has_airPressure_hpa_scaled100 = complete_data_set,
         .airPressure_hpa_scaled100 = 1000 * 100,
     };
@@ -35,11 +35,11 @@ CurrentData create_current_data(bool complete_data_set)
 {
     return (CurrentData){
         .has_surfaceCurrentDirection_degrees = true,
-        .surfaceCurrentDirection_degrees = 359 * 100,
+        .surfaceCurrentDirection_degrees = 359,
         .has_surfaceCurrentSpeed_kmh_scaled100 = true,
         .surfaceCurrentSpeed_kmh_scaled100 = 10 * 100,
-        .has_surfaceTemperature_celsius_scaled100 = complete_data_set,
-        .surfaceTemperature_celsius_scaled100 = 40 * 100,
+        .has_surfaceTemperature_celsius_scaled10 = complete_data_set,
+        .surfaceTemperature_celsius_scaled10 = 40 * 10,
     };
 }
 
@@ -120,15 +120,15 @@ int validate_decoded_data(const BuoyData* decoded, bool complete_data_set)
     }
     if (complete_data_set)
     {
-        TEST(decoded->airData.airTemperature_celsius_scaled100 == 40 * 100);
-        TEST(decoded->airData.airRelativeHumidity_percent_scaled100 == 100 * 100);
+        TEST(decoded->airData.airTemperature_celsius_scaled10 == 40 * 10);
+        TEST(decoded->airData.airRelativeHumidity_percent_scaled10 == 100 * 10);
         TEST(decoded->airData.airPressure_hpa_scaled100 == 1000 * 100);
     }
-    TEST(decoded->currentData.surfaceCurrentDirection_degrees == 359 * 100);
+    TEST(decoded->currentData.surfaceCurrentDirection_degrees == 359);
     TEST(decoded->currentData.surfaceCurrentSpeed_kmh_scaled100 == 10 * 100);
     if (complete_data_set)
     {
-        TEST(decoded->currentData.surfaceTemperature_celsius_scaled100 == 40 * 100);
+        TEST(decoded->currentData.surfaceTemperature_celsius_scaled10 == 40 * 10);
     }
     TEST(decoded->waveData.maximumWaveHeight_meters_scaled100 == 3 * 100);
     if (complete_data_set)
@@ -149,12 +149,12 @@ int validate_decoded_data(const BuoyData* decoded, bool complete_data_set)
     TEST(decoded->windData.has_windSpeedAverage_kmh_scaled100 == true);
     TEST(decoded->windData.has_windSpeedGust_kmh_scaled100 == complete_data_set);
     TEST(decoded->windData.has_windSpeedLull_kmh_scaled100 == complete_data_set);
-    TEST(decoded->airData.has_airTemperature_celsius_scaled100 == complete_data_set);
-    TEST(decoded->airData.has_airRelativeHumidity_percent_scaled100 == complete_data_set);
+    TEST(decoded->airData.has_airTemperature_celsius_scaled10 == complete_data_set);
+    TEST(decoded->airData.has_airRelativeHumidity_percent_scaled10 == complete_data_set);
     TEST(decoded->airData.has_airPressure_hpa_scaled100 == complete_data_set);
     TEST(decoded->currentData.has_surfaceCurrentDirection_degrees == true);
     TEST(decoded->currentData.has_surfaceCurrentSpeed_kmh_scaled100 == true);
-    TEST(decoded->currentData.has_surfaceTemperature_celsius_scaled100 == complete_data_set);
+    TEST(decoded->currentData.has_surfaceTemperature_celsius_scaled10 == complete_data_set);
     TEST(decoded->waveData.has_dominantWavePeriod_seconds_scaled100 == complete_data_set);
     TEST(decoded->waveData.has_significantWaveHeight_meters_scaled100 == complete_data_set);
     TEST(decoded->waveData.has_meanWaveHeightHighestTenth_meters_scaled100 == complete_data_set);

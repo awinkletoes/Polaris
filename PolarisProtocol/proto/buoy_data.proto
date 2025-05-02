@@ -8,15 +8,15 @@ message WindData {
 }
 
 message AirData {
-  optional uint32 airTemperature_celsius_scaled100 = 1;
-  optional uint32 airRelativeHumidity_percent_scaled100 = 2;
+  optional sint32 airTemperature_celsius_scaled10 = 1;
+  optional uint32 airRelativeHumidity_percent_scaled10 = 2;
   optional uint32 airPressure_hpa_scaled100 = 3;
 }
 
 message CurrentData {
   optional uint32 surfaceCurrentDirection_degrees = 1;
   optional uint32 surfaceCurrentSpeed_kmh_scaled100 = 2;
-  optional uint32 surfaceTemperature_celsius_scaled100 = 3;
+  optional sint32 surfaceTemperature_celsius_scaled10 = 3;
 }
 
 message WaveData {
@@ -27,8 +27,8 @@ message WaveData {
 }
 
 message Telemetry {
-  optional uint32 gpsLatitude_degrees_scaled10000000 = 1;
-  optional uint32 gpsLongitude_degrees_scaled10000000 = 2;
+  optional sint32 gpsLatitude_degrees_scaled10000000 = 1;
+  optional sint32 gpsLongitude_degrees_scaled10000000 = 2;
   optional uint32 gpsAltitude_meters_scaled100 = 3;
 }
 

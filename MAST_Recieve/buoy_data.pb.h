@@ -22,10 +22,10 @@ typedef struct _WindData {
 } WindData;
 
 typedef struct _AirData {
-    bool has_airTemperature_celsius_scaled100;
-    uint32_t airTemperature_celsius_scaled100;
-    bool has_airRelativeHumidity_percent_scaled100;
-    uint32_t airRelativeHumidity_percent_scaled100;
+    bool has_airTemperature_celsius_scaled10;
+    int32_t airTemperature_celsius_scaled10;
+    bool has_airRelativeHumidity_percent_scaled10;
+    uint32_t airRelativeHumidity_percent_scaled10;
     bool has_airPressure_hpa_scaled100;
     uint32_t airPressure_hpa_scaled100;
 } AirData;
@@ -35,8 +35,8 @@ typedef struct _CurrentData {
     uint32_t surfaceCurrentDirection_degrees;
     bool has_surfaceCurrentSpeed_kmh_scaled100;
     uint32_t surfaceCurrentSpeed_kmh_scaled100;
-    bool has_surfaceTemperature_celsius_scaled100;
-    uint32_t surfaceTemperature_celsius_scaled100;
+    bool has_surfaceTemperature_celsius_scaled10;
+    int32_t surfaceTemperature_celsius_scaled10;
 } CurrentData;
 
 typedef struct _WaveData {
@@ -52,9 +52,9 @@ typedef struct _WaveData {
 
 typedef struct _Telemetry {
     bool has_gpsLatitude_degrees_scaled10000000;
-    uint32_t gpsLatitude_degrees_scaled10000000;
+    int32_t gpsLatitude_degrees_scaled10000000;
     bool has_gpsLongitude_degrees_scaled10000000;
-    uint32_t gpsLongitude_degrees_scaled10000000;
+    int32_t gpsLongitude_degrees_scaled10000000;
     bool has_gpsAltitude_meters_scaled100;
     uint32_t gpsAltitude_meters_scaled100;
 } Telemetry;
@@ -96,12 +96,12 @@ extern "C" {
 #define WindData_windSpeedAverage_kmh_scaled100_tag 2
 #define WindData_windSpeedGust_kmh_scaled100_tag 3
 #define WindData_windSpeedLull_kmh_scaled100_tag 4
-#define AirData_airTemperature_celsius_scaled100_tag 1
-#define AirData_airRelativeHumidity_percent_scaled100_tag 2
+#define AirData_airTemperature_celsius_scaled10_tag 1
+#define AirData_airRelativeHumidity_percent_scaled10_tag 2
 #define AirData_airPressure_hpa_scaled100_tag    3
 #define CurrentData_surfaceCurrentDirection_degrees_tag 1
 #define CurrentData_surfaceCurrentSpeed_kmh_scaled100_tag 2
-#define CurrentData_surfaceTemperature_celsius_scaled100_tag 3
+#define CurrentData_surfaceTemperature_celsius_scaled10_tag 3
 #define WaveData_dominantWavePeriod_seconds_scaled100_tag 1
 #define WaveData_significantWaveHeight_meters_scaled100_tag 2
 #define WaveData_meanWaveHeightHighestTenth_meters_scaled100_tag 3
@@ -125,8 +125,8 @@ X(a, STATIC,   OPTIONAL, UINT32,   windSpeedLull_kmh_scaled100,   4)
 #define WindData_DEFAULT NULL
 
 #define AirData_FIELDLIST(X, a) \
-X(a, STATIC,   OPTIONAL, UINT32,   airTemperature_celsius_scaled100,   1) \
-X(a, STATIC,   OPTIONAL, UINT32,   airRelativeHumidity_percent_scaled100,   2) \
+X(a, STATIC,   OPTIONAL, SINT32,   airTemperature_celsius_scaled10,   1) \
+X(a, STATIC,   OPTIONAL, UINT32,   airRelativeHumidity_percent_scaled10,   2) \
 X(a, STATIC,   OPTIONAL, UINT32,   airPressure_hpa_scaled100,   3)
 #define AirData_CALLBACK NULL
 #define AirData_DEFAULT NULL
@@ -134,7 +134,7 @@ X(a, STATIC,   OPTIONAL, UINT32,   airPressure_hpa_scaled100,   3)
 #define CurrentData_FIELDLIST(X, a) \
 X(a, STATIC,   OPTIONAL, UINT32,   surfaceCurrentDirection_degrees,   1) \
 X(a, STATIC,   OPTIONAL, UINT32,   surfaceCurrentSpeed_kmh_scaled100,   2) \
-X(a, STATIC,   OPTIONAL, UINT32,   surfaceTemperature_celsius_scaled100,   3)
+X(a, STATIC,   OPTIONAL, SINT32,   surfaceTemperature_celsius_scaled10,   3)
 #define CurrentData_CALLBACK NULL
 #define CurrentData_DEFAULT NULL
 
@@ -147,8 +147,8 @@ X(a, STATIC,   OPTIONAL, UINT32,   maximumWaveHeight_meters_scaled100,   4)
 #define WaveData_DEFAULT NULL
 
 #define Telemetry_FIELDLIST(X, a) \
-X(a, STATIC,   OPTIONAL, UINT32,   gpsLatitude_degrees_scaled10000000,   1) \
-X(a, STATIC,   OPTIONAL, UINT32,   gpsLongitude_degrees_scaled10000000,   2) \
+X(a, STATIC,   OPTIONAL, SINT32,   gpsLatitude_degrees_scaled10000000,   1) \
+X(a, STATIC,   OPTIONAL, SINT32,   gpsLongitude_degrees_scaled10000000,   2) \
 X(a, STATIC,   OPTIONAL, UINT32,   gpsAltitude_meters_scaled100,   3)
 #define Telemetry_CALLBACK NULL
 #define Telemetry_DEFAULT NULL
