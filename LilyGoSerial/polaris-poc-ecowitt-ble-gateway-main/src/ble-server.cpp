@@ -16,6 +16,7 @@ BLEServer *pServer = nullptr;
 BLECharacteristic *pTrueWindDirection = nullptr;
 BLECharacteristic *pTrueWindSpeedAvg = nullptr;
 BLECharacteristic *pTrueWindSpeedMax = nullptr;
+BLECharacteristic *pHumidity = nullptr;
 
 class CustomServerCallbacks : public BLEServerCallbacks {
     void onConnect(BLEServer *pServer) override {
@@ -99,3 +100,4 @@ void ble_update_true_wind_speed_max(double speed) {
     pTrueWindSpeedMax->setValue(intSpeed);
     pTrueWindSpeedMax->notify();
 }
+

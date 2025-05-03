@@ -10,4 +10,6 @@ void ble_update_true_wind_speed_avg(double speed);
 
 void ble_update_true_wind_speed_max(double speed);
 
+void ble_update_humidity(double humidity);
+
 #endif //BLE_SERVER_H
