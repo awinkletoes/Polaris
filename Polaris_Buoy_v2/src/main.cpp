@@ -1,10 +1,12 @@
 /// Libraries ///
+#include <Arduino.h>
 #include <Adafruit_BNO055.h>
 #include "Buoy_Sensors.h"
 #include "LoRaBoards.h"
 #include "utilities.h"
 #include <RadioLib.h>
 #include <EEPROM.h>
+
 
 #include "buoy_data.pb.h""
 #include "pb_encode.h"
@@ -40,8 +42,8 @@ static const uint32_t GPSBaud = 9600;
 
 HardwareSerial GPS_UART(1);
 
-#define GPS_RX 15 //GPS Receive
-#define GPS_TX 16 //GPS Transmit
+#define GPS_RX 16 //GPS Receive
+#define GPS_TX 15 //GPS Transmit
 
 TinyGPSPlus gps; // The TinyGPSPlus object
 

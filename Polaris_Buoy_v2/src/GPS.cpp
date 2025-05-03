@@ -6,14 +6,15 @@ static void smartDelay(TinyGPSPlus gps, unsigned long ms)
   unsigned long start = millis();
   do 
   {
-    while (Serial1.available()) //changed to serial1
-      gps.encode(Serial1.read()); //changed to serial1
+    while (Serial1.available()) 
+      gps.encode(Serial1.read()); 
   } while (millis() - start < ms);
 }
 
 static Telemetry getGPS(TinyGPSPlus& gps) {
   Telemetry telemetry = Telemetry_init_zero;
   if (gps.location.isValid()) {
+    Serial.println("gps location valid, collecting data. . .");
     telemetry.has_gpsLatitude_degrees_scaled10000000 = true;
     telemetry.gpsLatitude_degrees_scaled10000000 = gps.location.lat() * 10000000;
     telemetry.has_gpsLongitude_degrees_scaled10000000 = true;
