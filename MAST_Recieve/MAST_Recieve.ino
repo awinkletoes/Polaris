@@ -152,7 +152,7 @@ void loop() {
         {
           Serial.println(F("Surface Current Speed: "));
           Serial.println(decoded.currentData.surfaceCurrentSpeed_kmh_scaled100 / 100.0, 2);
-          dataURI += "&waterSpeedKn=:" + String(decoded.currentData.surfaceCurrentSpeed_kmh_scaled100 * 1.85 / 100.0, 2);
+          dataURI += "&waterSpeedKn=" + String(decoded.currentData.surfaceCurrentSpeed_kmh_scaled100 * 1.85 / 100.0, 2);
         }
       }
       if (decoded.has_waveData)
