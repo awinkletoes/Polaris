@@ -10,7 +10,7 @@
 
 #define EEPROM_CALIBRATION_START 0 // Calling IMU memory to get calibration data saved 
 
-static bool parseWindData(const String& message, double& windDir, double& windSpeed) {
+static bool parseWeatherData(const String& message, BuoyData &buoyData, Adafruit_BNO055 &bno) {
   // Clean the message
   String cleanedMessage = message;
   cleanedMessage.trim();
@@ -37,37 +37,59 @@ static bool parseWindData(const String& message, double& windDir, double& windSp
     return false;
   }
 
-  //  Correct field names
-  if (doc.containsKey("wind_dir_deg") &&
-      (doc.containsKey("wind_avg_m_s") || doc.containsKey("wind_max_m_s"))) {
+  if (doc.containsKey("wind_dir_deg"))
+  {
+    sensors_event_t event;
+    bno.getEvent(&event);
+    double yaw = event.orientation.x;
 
-    windDir = doc["wind_dir_deg"];
-
-    // Prefer wind_avg_m_s if available, otherwise fall back to wind_max_m_s
-    if (doc.containsKey("wind_avg_m_s")) {
-      windSpeed = doc["wind_avg_m_s"];
-    } else {
-      windSpeed = doc["wind_max_m_s"];
-    }
-
-    Serial.print("Parsed Wind Dir: ");
-    Serial.println(windDir);
-    Serial.print("Parsed Wind Speed: ");
-    Serial.println(windSpeed);
-
-    return true;
+    buoyData.has_windData = true;
+    uint32_t wind_dir_deg = doc["wind_dir_deg"];
+    wind_dir_deg = fmod(wind_dir_deg + yaw + 360, 360);  // Normalize to 0–360
+    buoyData.windData.has_windSpeedDirection_degrees = true;
+    buoyData.windData.windSpeedDirection_degrees = wind_dir_deg;
+    Serial.printf("wind_dir_deg: %d\n", wind_dir_deg);
+  }
+  if (doc.containsKey("wind_avg_m_s"))
+  {
+    buoyData.has_windData = true;
+    double wind_avg_m_s = doc["wind_avg_m_s"];
+    buoyData.windData.has_windSpeedAverage_kmh_scaled100 = true;
+    buoyData.windData.windSpeedAverage_kmh_scaled100 = wind_avg_m_s * 3.6 * 100.0;
+    Serial.printf("wind_avg_m_s: %f.1\n", wind_avg_m_s);
+  }
+  if (doc.containsKey("wind_max_m_s"))
+  {
+    buoyData.has_windData = true;
+    double wind_max_m_s = doc["wind_max_m_s"];
+    buoyData.windData.has_windSpeedGust_kmh_scaled100 = true;
+    buoyData.windData.windSpeedGust_kmh_scaled100 = wind_max_m_s * 3.6 * 100.0;
+    Serial.printf("wind_max_m_s: %f.1\n", wind_max_m_s);
+  }
+  if (doc.containsKey("temperature_C"))
+  {
+    buoyData.has_airData = true;
+    double temperature_C = doc["temperature_C"];
+    buoyData.airData.has_airTemperature_celsius_scaled10 = true;
+    buoyData.airData.airTemperature_celsius_scaled10 = temperature_C * 10.0;
+    Serial.printf("temperature_C: %f.1\n", temperature_C);
+  }
+  if (doc.containsKey("humidity"))
+  {
+    buoyData.has_airData = true;
+    double humidity = doc["humidity"];
+    buoyData.airData.has_airRelativeHumidity_percent_scaled10 = true;
+    buoyData.airData.airRelativeHumidity_percent_scaled10 = humidity * 10.0;
+    Serial.printf("humidity_percent: %f.1\n", humidity);
   }
 
-  Serial.println("Missing required fields in the JSON message");
-  return false;
+  return buoyData.has_windData || buoyData.has_airData;
 }
 
 
 
 // Collects wind info and returns a report String
-static WindData getWindInfo(HardwareSerial &serial, Adafruit_BNO055 &bno) {
-  double windDir = -1, windSpeed = -1, trueWindDir = -1;
-  WindData windData = WindData_init_zero;
+static bool getWeatherData(HardwareSerial &serial, Adafruit_BNO055 &bno, BuoyData &buoy_data) {
 
   unsigned long startTime = millis();
 
@@ -75,7 +97,7 @@ static WindData getWindInfo(HardwareSerial &serial, Adafruit_BNO055 &bno) {
   while (!serial.available()) {
     if (millis() - startTime > 15000) {  // 15 seconds timeout
       Serial.println("Timeout: No wind data received.");
-      return windData;
+      return false;
     }
     delay(10);  // Prevent CPU hogging
   }
@@ -83,23 +105,7 @@ static WindData getWindInfo(HardwareSerial &serial, Adafruit_BNO055 &bno) {
   // Read the incoming data
   String received = serial.readString();
 
-  // Parse the wind data if available
-  if (parseWindData(received, windDir, windSpeed)) {
-    sensors_event_t event;
-    bno.getEvent(&event);
-    double yaw = event.orientation.x;
-
-    // Calculate true wind direction
-    trueWindDir = fmod(windDir + yaw + 360, 360);  // Normalize to 0–360
-
-    windData.has_windSpeedAverage_kmh_scaled100 = true;
-    windData.windSpeedAverage_kmh_scaled100 = windSpeed * 3.6 * 100;
-    windData.has_windSpeedDirection_degrees = true;
-    windData.windSpeedDirection_degrees = trueWindDir;
-  }
-
-  // Return the wind data
-  return windData;
+  return parseWeatherData(received, buoy_data, bno);
 }
 
 
