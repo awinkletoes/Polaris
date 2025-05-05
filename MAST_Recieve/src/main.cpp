@@ -131,7 +131,13 @@ void loop() {
         {
           Serial.println(F("Wind Speed: "));
           Serial.println(decoded.windData.windSpeedAverage_kmh_scaled100 / 100.0, 2);
-          dataURI += "&windSpeedKph=" + String(decoded.windData.has_windSpeedAverage_kmh_scaled100 / 100.0, 2);
+          dataURI += "&windSpeedKph=" + String(decoded.windData.windSpeedAverage_kmh_scaled100 / 100.0, 2);
+        }
+        if (decoded.windData.has_windSpeedGust_kmh_scaled100)
+        {
+          Serial.println(F("Wind Gust: "));
+          Serial.println(decoded.windData.windSpeedGust_kmh_scaled100 / 100.0, 2);
+          dataURI += "&windGustKph=" + String(decoded.windData.windSpeedGust_kmh_scaled100 / 100.0, 2);
         }
         if (decoded.windData.has_windSpeedDirection_degrees)
         {
@@ -168,6 +174,27 @@ void loop() {
           Serial.println(F("Dominant Wave Period: "));
           Serial.println(decoded.waveData.dominantWavePeriod_seconds_scaled100 / 100.0, 2);
           dataURI += "&wavePeriodSeconds=" + String(decoded.waveData.dominantWavePeriod_seconds_scaled100 / 100.0, 2);
+        }
+      }
+      if (decoded.has_airData)
+      {
+        if (decoded.airData.has_airPressure_hpa_scaled100)
+        {
+          Serial.println(F("Air Pressure: "));
+          Serial.println(decoded.airData.airPressure_hpa_scaled100 / 100.0, 2);
+          dataURI += "&airPressureInHg=" + String(decoded.airData.airPressure_hpa_scaled100 / 33.8639 / 100.0, 4);
+        }
+        if (decoded.airData.has_airTemperature_celsius_scaled10)
+        {
+          Serial.println(F("Air Temperature: "));
+          Serial.println(decoded.airData.airTemperature_celsius_scaled10 / 100.0, 2);
+          dataURI += "&airTemperatureF=" + String(decoded.airData.airTemperature_celsius_scaled10 / 10.0 * 9 / 5.0 + 32, 2);
+        }
+        if (decoded.airData.has_airRelativeHumidity_percent_scaled10)
+        {
+          Serial.println(F("Air Relative Humidity: "));
+          Serial.println(decoded.airData.airRelativeHumidity_percent_scaled10 / 100.0, 2);
+          dataURI += "&airHumidityPercent=" + String(decoded.airData.airRelativeHumidity_percent_scaled10 / 10.0, 2);
         }
       }
       if (decoded.has_telemetry)
