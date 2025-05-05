@@ -11,8 +11,11 @@ Use:
   - Wave height measurement
   - Obtain z-axis movement
   - Double integrate for position data over time
-  - I2C connection to LilyGo 1262
-  - IMU calibration code will save the state in which IMU was at full 3 calibration
+  - Filter before integrating for both velocity and position
+  - Real time filtering using butterworth filter
+  - Next steps would be to filter using spectral analysis (filtfilt) 
+  - I2C connection to LilyGo 1262 via Qwiic connect
+  - IMU calibration code will save the state in which IMU was at full 3 calibration and upload using EEPROM
 
 Anemometer (Ecowitt GW1103)
 PoC: LilyGoSerial
@@ -20,6 +23,7 @@ https://www.ecowitt.com/shop/goodsDetail/126
 Use: 
   - Wind speed and direction
   - Humidity
+  - Air temperature in celsius
   - Using LoRa w/1276 chip to create BLE server and obtain rtl_433 data
   - Communicate to LoRa w/1262 chip via UART with data
 
@@ -34,6 +38,7 @@ PoC: TinyGPS_Example
 Use: 
   - Redundancy for location of buoy
   - UART communication to LilyGo 1262
+  - Task based approach (claudobahn) 
 
 Receive/transmit as well as TinyGPS examples pulled from here:
 https://github.com/Xinyuan-LilyGO/LilyGo-LoRa-Series/tree/master
