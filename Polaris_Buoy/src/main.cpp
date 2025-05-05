@@ -1,5 +1,6 @@
 /// Libraries ///
 #include <Arduino.h>
+#include <WiFi.h>
 #include <Adafruit_BNO055.h>
 #include "Buoy_Sensors.h"
 #include "LoRaBoards.h"
@@ -71,6 +72,8 @@ void setup() {
 
   // initialize the board via the LoRaBoards library. Will automatically detect I2C
   setupBoards();
+  //setupBoards turns on the wifi access point, needs to be turned off
+  WiFi.softAPdisconnect(true);
 
   delay(1500);
   // GPS //
