@@ -165,19 +165,17 @@ void loop() {
   WaveData wave_data = getWaveHeightInfo(bno);
 
   // 4. Read wind info
+  BuoyData buoy_data = BuoyData_init_zero;
   Serial.println("Getting anemometer data. . . ");
-  WindData wind_data = getWindInfo(Anem_UART, bno);  // will parse JSON and give wind speed, parsed direction, and true corrected direction (based on IMU)
+  getWeatherData(Anem_UART, bno, buoy_data);  // will parse JSON and give wind speed, parsed direction, and true corrected direction (based on IMU)
 
   // 5. Combine and send/report
-  BuoyData buoy_data = BuoyData_init_zero;
   buoy_data.has_telemetry = telemetry.has_gpsLatitude_degrees_scaled10000000;
   buoy_data.telemetry = telemetry;
   buoy_data.has_currentData = current_data.has_surfaceCurrentSpeed_kmh_scaled100;
   buoy_data.currentData = current_data;
   buoy_data.has_waveData = wave_data.has_maximumWaveHeight_meters_scaled100;
   buoy_data.waveData = wave_data;
-  buoy_data.has_windData = wind_data.has_windSpeedAverage_kmh_scaled100;
-  buoy_data.windData = wind_data;
 
   uint8_t buffer[256];
   pb_ostream_t ostream = pb_ostream_from_buffer(buffer, sizeof(buffer));
