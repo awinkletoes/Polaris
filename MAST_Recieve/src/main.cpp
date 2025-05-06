@@ -187,13 +187,13 @@ void loop() {
         if (decoded.airData.has_airTemperature_celsius_scaled10)
         {
           Serial.println(F("Air Temperature: "));
-          Serial.println(decoded.airData.airTemperature_celsius_scaled10 / 100.0, 2);
+          Serial.println(decoded.airData.airTemperature_celsius_scaled10 / 10.0, 2);
           dataURI += "&airTemperatureF=" + String(decoded.airData.airTemperature_celsius_scaled10 / 10.0 * 9 / 5.0 + 32, 2);
         }
         if (decoded.airData.has_airRelativeHumidity_percent_scaled10)
         {
           Serial.println(F("Air Relative Humidity: "));
-          Serial.println(decoded.airData.airRelativeHumidity_percent_scaled10 / 100.0, 2);
+          Serial.println(decoded.airData.airRelativeHumidity_percent_scaled10 / 10.0, 2);
           dataURI += "&airHumidityPercent=" + String(decoded.airData.airRelativeHumidity_percent_scaled10 / 10.0, 2);
         }
       }
